@@ -32,8 +32,8 @@ public class ChatTest : MonoBehaviour {
         if (string.IsNullOrEmpty(_chatString))
             return;
 
-        GameObject _chatClone = Instantiate(_PreChatItem);
-        _chatClone.transform.SetParent( _ChatParent);
+        GameObject _chatClone = Instantiate(_PreChatItem, _ChatParent);
+        //_chatClone.transform.SetParent( _ChatParent);
         InlineText _chatText = _chatClone.transform.Find("Text").GetComponent<InlineText>();
         Image _chatImage= _chatClone.transform.Find("BG").GetComponent<Image>();
         _chatText.text = _chatString;
