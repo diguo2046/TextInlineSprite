@@ -16,6 +16,8 @@ public class SpriteAssetEditor : Editor
     private int _showIndex;
     //序列帧播放速度
     private float _playSpeed;
+    //序列帧播放速度
+    private float _animationTime;
     //添加标签
     private bool _addTag;
     //添加的标签的名称
@@ -25,7 +27,7 @@ public class SpriteAssetEditor : Editor
     {
         _spriteAsset = (SpriteAsset)target;
 
-        _playSpeed = 6;
+        _playSpeed = 5;
 
         Init();
 
@@ -106,6 +108,11 @@ public class SpriteAssetEditor : Editor
         GUILayout.EndHorizontal();
         #endregion
 
+        GUILayout.BeginHorizontal();
+        GUILayout.Label(string.Format("PlaySpeed: {0:F}", _playSpeed), GUILayout.Width(100));
+        _playSpeed = GUILayout.HorizontalSlider(_playSpeed, 0, 10, GUILayout.Width(120));
+        GUILayout.EndHorizontal();
+        _animationTime += Time.deltaTime * _playSpeed;
         for (int i = 0; i < _spriteAsset.ListSpriteGroup.Count; i++)
         {
             GUILayout.BeginHorizontal("HelpBox");
@@ -140,8 +147,11 @@ public class SpriteAssetEditor : Editor
                     _playIndexs[i] = 0;
 
                 GUI.enabled = false;
-                EditorGUILayout.ObjectField("", _spriteAsset.ListSpriteGroup[i].ListSpriteInfor[_playIndexs[i]].Sprite, typeof(Sprite), false);
+                EditorGUILayout.ObjectField("", _spriteAsset.ListSpriteGroup[i].ListSpriteInfor[_playIndexs[i]].Sprite, typeof(Sprite), false, GUILayout.Width(60));
                 GUI.enabled = true;
+
+                if (_animationTime > 1f)
+                    ++_playIndexs[i];
             }
             #endregion
             GUILayout.EndHorizontal();
@@ -220,6 +230,11 @@ public class SpriteAssetEditor : Editor
                 }
             }
             #endregion 
+        }
+
+        if(_animationTime > 1f)
+        {
+            _animationTime = 0f;
         }
 
         GUILayout.EndScrollView();

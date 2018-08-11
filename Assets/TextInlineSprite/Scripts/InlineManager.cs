@@ -228,19 +228,22 @@ public class InlineManager : MonoBehaviour {
             for (int i = 0; i < item.Value.Triangles.Length; i++)
                 triangles.Add(item.Value.Triangles[i]);
         }
+
+        int num, offset;
         //计算顶点绘制顺序
         for (int i = 0; i < triangles.Count; i++)
         {
             if (i % 6 == 0)
             {
-                int num = i / 6;
-                triangles[i + 0] = 0 + 4 * num;
-                triangles[i + 1] = 1 + 4 * num;
-                triangles[i + 2] = 2 + 4 * num;
-
-                triangles[i + 3] = 0 + 4 * num;
-                triangles[i + 4] = 2 + 4 * num;
-                triangles[i + 5] = 3 + 4 * num;
+                num = i / 6;
+                offset = num << 2; // 4 * num
+                triangles[i + 0] = 0 + offset;
+                triangles[i + 1] = 1 + offset;
+                triangles[i + 2] = 2 + offset;
+                                       
+                triangles[i + 3] = 0 + offset;
+                triangles[i + 4] = 2 + offset;
+                triangles[i + 5] = 3 + offset;
             }
         }
         mesh.Clear();

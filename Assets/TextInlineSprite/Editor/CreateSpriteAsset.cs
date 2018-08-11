@@ -6,8 +6,21 @@ using System.Collections.Generic;
 
 public static class CreateSpriteAsset
 {
-    [MenuItem("Assets/Create/Sprite Asset",false,10)]
-    static void main()
+    // 创建静态表情
+    [MenuItem("Assets/Create/Sprite Asset/Static",false,10)]
+    static void CreateAssetStatic()
+    {
+        CreateAsset(true);
+    }
+
+    // 创建动态表情
+    [MenuItem("Assets/Create/Sprite Asset/Animation", false, 10)]
+    static void CreateAssetAnimation()
+    {
+        CreateAsset(false);
+    }
+
+    static void CreateAsset(bool isStatic)
     {
         Object target = Selection.activeObject;
         if (target == null || target.GetType() != typeof(Texture2D))
@@ -29,14 +42,13 @@ public static class CreateSpriteAsset
         {
             spriteAsset = ScriptableObject.CreateInstance<SpriteAsset>();
             spriteAsset.TexSource = sourceTex;
-            spriteAsset.ListSpriteGroup = GetAssetSpriteInfor(sourceTex);
+            spriteAsset.ListSpriteGroup = GetAssetSpriteInfor(sourceTex, isStatic);
             AssetDatabase.CreateAsset(spriteAsset, filePath + fileNameWithoutExtension + ".asset");
         }
     }
    
-    public static List<SpriteInforGroup> GetAssetSpriteInfor(Texture2D tex)
+    public static List<SpriteInforGroup> GetAssetSpriteInfor(Texture2D tex, bool isStatic)
     {
-        List<SpriteInforGroup> _listGroup = new List<SpriteInforGroup>();
         string filePath = UnityEditor.AssetDatabase.GetAssetPath(tex);
 
         Object[] objects = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(filePath);
@@ -48,18 +60,37 @@ public static class CreateSpriteAsset
         {
             if (objects[i].GetType() != typeof(Sprite))
                 continue;
-                SpriteInfor temp = new SpriteInfor();
-                Sprite sprite = objects[i] as Sprite;
-                temp.Id = i;
-                temp.Name = sprite.name;
-                temp.Pivot = sprite.pivot;
-                temp.Rect = sprite.rect;
-                temp.Sprite = sprite;
-                temp.Tag = sprite.name;
-                temp.Uv = GetSpriteUV(_texSize, sprite.rect);
-                 _tempSprite.Add(temp);
+            SpriteInfor temp = new SpriteInfor();
+            Sprite sprite = objects[i] as Sprite;
+            temp.Id = i;
+            temp.Name = sprite.name;
+            temp.Pivot = sprite.pivot;
+            temp.Rect = sprite.rect;
+            temp.Sprite = sprite;
+            temp.Tag = sprite.name;
+            temp.Uv = GetSpriteUV(_texSize, sprite.rect);
+            _tempSprite.Add(temp);
         }
 
+        List<SpriteInforGroup> _listGroup = null;
+        try
+        {
+            if (isStatic)
+                _listGroup = GetStaticList(_tempSprite);
+            else
+                _listGroup = GetAnimationList(_tempSprite);
+        }
+        catch(System.Exception e)
+        {
+            Debug.LogError(e);
+        }
+
+        return _listGroup;
+    }
+
+    static List<SpriteInforGroup> GetStaticList(List<SpriteInfor> _tempSprite)
+    {
+        List<SpriteInforGroup> _listGroup = new List<SpriteInforGroup>(_tempSprite.Count);
         for (int i = 0; i < _tempSprite.Count; i++)
         {
             SpriteInforGroup _tempGroup = new SpriteInforGroup();
@@ -68,21 +99,47 @@ public static class CreateSpriteAsset
             //_tempGroup.Width = 1.0f;
             _tempGroup.ListSpriteInfor = new List<SpriteInfor>();
             _tempGroup.ListSpriteInfor.Add(_tempSprite[i]);
-            for (int j = i+1; j < _tempSprite.Count; j++)
-            {
-                if ( _tempGroup.Tag == _tempSprite[j].Tag)
-                {
-                    _tempGroup.ListSpriteInfor.Add(_tempSprite[j]);
-                    _tempSprite.RemoveAt(j);
-                    j--;
-                }
-            }
             _listGroup.Add(_tempGroup);
-            _tempSprite.RemoveAt(i);
-            i--;
         }
 
         return _listGroup;
+    }
+
+    static List<SpriteInforGroup> GetAnimationList(List<SpriteInfor> spriteList)
+    {
+        SortedDictionary<string, SpriteInforGroup> dic = new SortedDictionary<string, SpriteInforGroup>();
+        for (int i = 0; i < spriteList.Count; i++)
+        {
+            string[] info = spriteList[i].Name.Split('_');
+            if (info.Length != 2)
+            {
+                Debug.Log("sprite name format error, should be xxx_N, like happy_0, happy_1, etc");
+                continue;
+            }
+
+            string tag = info[0];
+            spriteList[i].Tag = tag;
+            if(dic.ContainsKey(tag))
+            {
+                dic[tag].ListSpriteInfor.Insert(int.Parse(info[1]), spriteList[i]);
+            }
+            else
+            {
+                SpriteInforGroup group = new SpriteInforGroup();
+                group.Tag = tag;
+                group.ListSpriteInfor = new List<SpriteInfor>();
+                group.ListSpriteInfor.Insert(int.Parse(info[1]), spriteList[i]);
+                dic.Add(tag, group);
+            }
+        }
+
+        List<SpriteInforGroup> listGroup = new List<SpriteInforGroup>(dic.Count);
+        foreach(var v in dic)
+        {
+            listGroup.Add(v.Value);
+        }
+
+        return listGroup;
     }
 
     private static Vector2[] GetSpriteUV(Vector2 texSize,Rect _sprRect)
