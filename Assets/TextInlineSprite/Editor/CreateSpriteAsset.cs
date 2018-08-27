@@ -41,6 +41,7 @@ public static class CreateSpriteAsset
         if (isNewAsset)
         {
             spriteAsset = ScriptableObject.CreateInstance<SpriteAsset>();
+            spriteAsset.IsStatic = isStatic;
             spriteAsset.TexSource = sourceTex;
             spriteAsset.ListSpriteGroup = GetAssetSpriteInfor(sourceTex, isStatic);
             AssetDatabase.CreateAsset(spriteAsset, filePath + fileNameWithoutExtension + ".asset");

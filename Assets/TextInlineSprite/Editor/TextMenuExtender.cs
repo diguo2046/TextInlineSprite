@@ -20,7 +20,7 @@ public class TextMenuExtender
             go = new GameObject();
             go.AddComponent<InlineText>();
         }
-        go.name = "InlinText";
+        go.name = "InlineText";
         GameObject parent = menuCommand.context as GameObject;
         if (parent == null)
         {

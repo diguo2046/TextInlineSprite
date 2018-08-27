@@ -97,7 +97,20 @@ public class InlineText : Text, IPointerClickHandler
         _outputText = GetOutputText();
     }
 
-   
+    public override string text
+    {
+        get
+        {
+            return base.text;
+        }
+
+        set
+        {
+            if(!_inlineManager)
+                ActiveText();
+            base.text = value;
+        }
+    }
     protected override void OnPopulateMesh(VertexHelper toFill)
     {
         if (font == null)

@@ -11,10 +11,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class InlineManager : MonoBehaviour {
-
-	#region 属性
-	//所有的精灵消息
-	public Dictionary<int, Dictionary<string, SpriteInforGroup>> IndexSpriteInfo=new Dictionary<int, Dictionary<string, SpriteInforGroup>>();
+    public int standScreenW = 1136;
+    public int standScreenH = 640;
+    #region 属性
+    //所有的精灵消息
+    public Dictionary<int, Dictionary<string, SpriteInforGroup>> IndexSpriteInfo=new Dictionary<int, Dictionary<string, SpriteInforGroup>>();
     //绘制图集的索引
     private readonly Dictionary<int, SpriteGraphicInfo> _indexSpriteGraphic = new Dictionary<int, SpriteGraphicInfo>();
     //绘制的模型数据索引
@@ -81,7 +82,15 @@ public class InlineManager : MonoBehaviour {
         int spriteTagCount = value.Count;
         Vector3 textPos = key.transform.position;
         Vector3 spritePos = _indexSpriteGraphic[id].SpriteGraphic.transform.position;
-		Vector3 disPos = (textPos - spritePos)*(1.0f/ key.pixelsPerUnit);
+
+        // 添加分辨率适配
+        float ratio = 100;
+        float cratio = (float)Screen.width / Screen.height;
+        float oratio = (float)standScreenW / standScreenH;
+        if (cratio < oratio)
+            ratio *= oratio / cratio;
+
+        Vector3 disPos = (textPos - spritePos)*(1.0f/ key.pixelsPerUnit * ratio);
 		//新增摄像机模式的位置判断
 		if (key.canvas != null)
         {
@@ -104,7 +113,7 @@ public class InlineManager : MonoBehaviour {
             //标签
             meshInfo.Tag[i] = value[i].Tag;
             //顶点位置
-            meshInfo.Vertices[m + 0] = value[i].Pos[0]+ disPos;
+            meshInfo.Vertices[m + 0] = value[i].Pos[0] + disPos;
             meshInfo.Vertices[m + 1] = value[i].Pos[1] + disPos;
             meshInfo.Vertices[m + 2] = value[i].Pos[2] + disPos;
             meshInfo.Vertices[m + 3] = value[i].Pos[3] + disPos;
@@ -116,8 +125,8 @@ public class InlineManager : MonoBehaviour {
         }
         if (_textMeshInfo[id].ContainsKey(key))
         {
-            MeshInfo oldMeshInfo = _textMeshInfo[id][key];
-            if (!meshInfo.Equals(oldMeshInfo))
+            //MeshInfo oldMeshInfo = _textMeshInfo[id][key];
+            //if (!meshInfo.Equals(oldMeshInfo))
                 _textMeshInfo[id][key] = meshInfo;
         }
         else
@@ -208,48 +217,48 @@ public class InlineManager : MonoBehaviour {
 
 		SpriteGraphic spriteGraphic = _indexSpriteGraphic[id].SpriteGraphic;
         Mesh mesh = _indexSpriteGraphic[id].Mesh;
+        mesh.Clear();
+
         Dictionary<InlineText, MeshInfo> data = _textMeshInfo[id];
-        List<Vector3> vertices = new List<Vector3>();
-        List<Vector2> uv = new List<Vector2>();
-        List<int> triangles = new List<int>();
-        foreach (var item in data)
+        if (data.Count > 0)
         {
-			if (item.Key == null)
-				continue;
-
-			for (int i = 0; i < item.Value.Vertices.Length; i++)
+            List<Vector3> vertices = new List<Vector3>();
+            List<Vector2> uv = new List<Vector2>();
+            List<int> triangles = new List<int>();
+            foreach (var item in data)
             {
-                //添加顶点
-                vertices.Add(item.Value.Vertices[i]);
-                //添加uv
-                uv.Add(item.Value.Uv[i]);
+                if (item.Key == null)
+                    continue;
+
+                for (int i = 0; i < item.Value.Vertices.Length; i++)
+                {
+                    //添加顶点
+                    vertices.Add(item.Value.Vertices[i]);
+                    //添加uv
+                    uv.Add(item.Value.Uv[i]);
+                }
+                //添加顶点索引
+                for (int i = 0; i < item.Value.Triangles.Length; i++)
+                    triangles.Add(item.Value.Triangles[i]);
             }
-            //添加顶点索引
-            for (int i = 0; i < item.Value.Triangles.Length; i++)
-                triangles.Add(item.Value.Triangles[i]);
-        }
 
-        int num, offset;
-        //计算顶点绘制顺序
-        for (int i = 0; i < triangles.Count; i++)
-        {
-            if (i % 6 == 0)
+            int num, offset;
+            //计算顶点绘制顺序
+            for (int i = num = 0; i < triangles.Count; i += 6, ++num)
             {
-                num = i / 6;
                 offset = num << 2; // 4 * num
                 triangles[i + 0] = 0 + offset;
                 triangles[i + 1] = 1 + offset;
                 triangles[i + 2] = 2 + offset;
-                                       
+
                 triangles[i + 3] = 0 + offset;
                 triangles[i + 4] = 2 + offset;
                 triangles[i + 5] = 3 + offset;
             }
+            mesh.vertices = vertices.ToArray();
+            mesh.uv = uv.ToArray();
+            mesh.triangles = triangles.ToArray();
         }
-        mesh.Clear();
-        mesh.vertices = vertices.ToArray();
-        mesh.uv = uv.ToArray();
-        mesh.triangles = triangles.ToArray();
 
         spriteGraphic.canvasRenderer.SetMesh(mesh);
         spriteGraphic.UpdateMaterial();
