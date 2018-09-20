@@ -30,7 +30,7 @@ public class InlineText : Text, IPointerClickHandler
     //图集ID，相关信息
     private Dictionary<int, List<SpriteTagInfo>> _drawSpriteInfo = new Dictionary<int, List<SpriteTagInfo>>();
 	//保留之前的图集ID，相关信息
-	private Dictionary<int, List<SpriteTagInfo>> _oldDrawSpriteInfo = new Dictionary<int, List<SpriteTagInfo>>();
+	//private Dictionary<int, List<SpriteTagInfo>> _oldDrawSpriteInfo = new Dictionary<int, List<SpriteTagInfo>>();
 	//计算定点信息的缓存数组
 	private readonly UIVertex[] m_TempVerts = new UIVertex[4];
 
@@ -106,8 +106,14 @@ public class InlineText : Text, IPointerClickHandler
 
         set
         {
-            if(!_inlineManager)
+            if (!_inlineManager)
                 ActiveText();
+
+            // 没有表情时也要提醒manager删除之前的信息
+            foreach (var item in _drawSpriteInfo)
+            {
+                _inlineManager.RemoveTextInfo(item.Key, this);
+            }
             base.text = value;
         }
     }
@@ -169,6 +175,8 @@ public class InlineText : Text, IPointerClickHandler
 
         //计算quad占位的信息
         CalcQuadInfo(listVertsPos);
+        //绘制表情
+        UpdateDrawnSprite();
         //计算包围盒
         CalcBoundsInfo(listVertsPos, toFill, settings);
 
@@ -226,8 +234,6 @@ public class InlineText : Text, IPointerClickHandler
                 item.Value.Pos[i - item.Key] = _listVertsPos[i];
             }
         }
-        //绘制表情
-        UpdateDrawnSprite();
     }
     #endregion
 
@@ -235,7 +241,7 @@ public class InlineText : Text, IPointerClickHandler
     void UpdateDrawnSprite()
     {
 		//记录之前的信息
-	    _oldDrawSpriteInfo = _drawSpriteInfo;
+	    //_oldDrawSpriteInfo = _drawSpriteInfo;
 
 		_drawSpriteInfo = new Dictionary<int, List<SpriteTagInfo>>();
         foreach (var item in _spriteInfo)
@@ -255,11 +261,11 @@ public class InlineText : Text, IPointerClickHandler
         }
 
 		//没有表情时也要提醒manager删除之前的信息
-	    foreach (var item in _oldDrawSpriteInfo)
-	    {
-		    if(!_drawSpriteInfo.ContainsKey(item.Key))
-			    _inlineManager.RemoveTextInfo(item.Key,this);
-		}
+	 //   foreach (var item in _oldDrawSpriteInfo)
+	 //   {
+		//    if(!_drawSpriteInfo.ContainsKey(item.Key))
+		//	    _inlineManager.RemoveTextInfo(item.Key,this);
+		//}
 
 	    foreach (var item in _drawSpriteInfo)
         {
